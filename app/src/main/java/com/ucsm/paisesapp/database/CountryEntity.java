@@ -4,7 +4,6 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import java.util.List;
-
 @Entity(tableName = "countries")
 public class CountryEntity {
 
@@ -12,6 +11,7 @@ public class CountryEntity {
     public int id;
 
     public String country;
+    public String cities;
 
-    public String cities; // guardamos como STRING
+    public boolean isFavorite;
 }

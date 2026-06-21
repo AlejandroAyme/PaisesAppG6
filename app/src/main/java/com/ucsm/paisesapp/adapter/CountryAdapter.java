@@ -50,6 +50,7 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.ViewHold
 
             Intent intent = new Intent(context, CountryDetailActivity.class);
 
+            intent.putExtra("id", country.id);
             intent.putExtra("country", country.country);
             intent.putExtra("cities", country.cities);
 
@@ -72,5 +73,10 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.ViewHold
             tvCountry = itemView.findViewById(R.id.tvCountry);
             tvCities = itemView.findViewById(R.id.tvCities);
         }
+
+    }
+    public void updateList(List<CountryEntity> newList) {
+        this.list = newList;
+        notifyDataSetChanged();
     }
 }

@@ -17,4 +17,13 @@ public interface CountryDao {
 
     @Query("DELETE FROM countries")
     void deleteAll();
+
+    @Query("SELECT * FROM countries WHERE isFavorite = 1")
+    List<CountryEntity> getFavorites();
+
+    @Query("UPDATE countries SET isFavorite = :favorite WHERE id = :id")
+    void updateFavorite(int id, boolean favorite);
+
+    @Query("SELECT * FROM countries WHERE id = :id")
+    CountryEntity getById(int id);
 }

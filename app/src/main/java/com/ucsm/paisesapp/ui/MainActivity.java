@@ -1,7 +1,10 @@
 package com.ucsm.paisesapp.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import androidx.appcompat.widget.SearchView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -26,13 +29,17 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    RecyclerView recyclerView;
-    CountryAdapter adapter;
+    private RecyclerView recyclerView;
+    private CountryAdapter adapter;
 
-    List<CountryEntity> list;
+    private List<CountryEntity> list;
+    private List<CountryEntity> allCountries;
 
-    AppDatabase db;
-    CountryApi api;
+    private AppDatabase db;
+    private CountryApi api;
+
+    private Button btnFavorites;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,23 +47,51 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         recyclerView = findViewById(R.id.recyclerCountries);
+        btnFavorites = findViewById(R.id.btnFavorites);
+        searchView = findViewById(R.id.searchView);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         db = DatabaseClient.getInstance(this);
         api = RetrofitClient.getClient().create(CountryApi.class);
 
-        // IMPORTANTE: inicializar una sola lista
         list = new ArrayList<>();
+        allCountries = new ArrayList<>();
+
         adapter = new CountryAdapter(this, list);
         recyclerView.setAdapter(adapter);
 
-        loadFromRoom();   // primero offline
-        loadFromApi();    // luego actualiza
+        btnFavorites.setOnClickListener(v -> {
+            Intent intent = new Intent(this, FavoritesActivity.class);
+            startActivity(intent);
+        });
+
+        searchView.setOnQueryTextListener(
+                new SearchView.OnQueryTextListener() {
+
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        filterCountries(newText);
+                        return true;
+                    }
+                });
+
+        loadFromRoom();
+
+        if (allCountries.isEmpty()) {
+            loadFromApi();
+        }
     }
 
     private void loadFromApi() {
 
         api.getCountries().enqueue(new Callback<CountryResponse>() {
+
             @Override
             public void onResponse(Call<CountryResponse> call,
                                    Response<CountryResponse> response) {
@@ -86,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
                     Log.d("API", "Datos guardados en Room");
 
-                    loadFromRoom(); // refrescar UI
+                    loadFromRoom();
                 }
             }
 
@@ -101,11 +136,37 @@ public class MainActivity extends AppCompatActivity {
 
         List<CountryEntity> data = db.countryDao().getAll();
 
+        allCountries.clear();
+        allCountries.addAll(data);
+
         list.clear();
         list.addAll(data);
 
         adapter.notifyDataSetChanged();
 
-        Log.d("ROOM", "Datos cargados: " + data.size());
+        Log.d("ROOM", "Países cargados: " + data.size());
+    }
+
+    private void filterCountries(String text) {
+
+        if (text == null || text.trim().isEmpty()) {
+
+            adapter.updateList(new ArrayList<>(allCountries));
+            return;
+        }
+
+        List<CountryEntity> filtered = new ArrayList<>();
+
+        for (CountryEntity country : allCountries) {
+
+            if (country.country != null &&
+                    country.country.toLowerCase()
+                            .contains(text.toLowerCase())) {
+
+                filtered.add(country);
+            }
+        }
+
+        adapter.updateList(filtered);
     }
 }
